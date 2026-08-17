@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jungle Chat - PongoBot</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CUSTOM SCROLLBAR --- */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #051105; /* Dark Jungle Green */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #FFD700, #FFA500); /* Golden Banana Gradient */
+            border-radius: 10px;
+            border: 3px solid #051105; /* Creates a nice gap */
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #FFE55C, #FFB732); /* Lighter on hover */
+        }
+
+        /* --- CORE STYLES --- */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            font-family: Arial, sans-serif;
+            overflow-x: hidden; 
+            scroll-behavior: smooth;
+            background: url('images/jungle-scene.jpg') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        /* --- DAY & NIGHT CYCLE OVERLAY --- */
+        #day-night-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5000; 
+            pointer-events: none; 
+            animation: dayNightCycle 60s infinite linear;
+            mix-blend-mode: multiply; 
+        }
+
+        @keyframes dayNightCycle {
+            0% { background-color: rgba(255, 255, 255, 0); }     /* Noon */
+            25% { background-color: rgba(255, 140, 0, 0.3); }    /* Sunset */
+            50% { background-color: rgba(0, 0, 30, 0.6); }       /* Night */
+            75% { background-color: rgba(147, 112, 219, 0.3); }  /* Sunrise */
+            100% { background-color: rgba(255, 255, 255, 0); }   /* Noon */
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes swing {
+            0% { transform: rotate(0deg); }
+            20% { transform: rotate(5deg); }
+            40% { transform: rotate(-5deg); }
+            60% { transform: rotate(3deg); }
+            80% { transform: rotate(-3deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        .feature-card:hover { animation: swing 1s ease-in-out; background: rgba(255, 255, 255, 0.2); }
+        .nav-cta:hover, .explore-button:hover, .chat-nav-btn:hover { animation: swing 0.5s ease-in-out; }
+
+        /* --- VINES --- */
+        .vine-decoration { position: fixed; top: -10px; z-index: 100; pointer-events: none; animation: gentleSway 3s ease-in-out infinite alternate; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5)); }
+        .vine-left { left: 20px; transform-origin: top left; }
+        .vine-right { right: 20px; transform: scaleX(-1); transform-origin: top right; }
+        @keyframes gentleSway { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+
+        /* --- NAVIGATION BAR --- */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            padding: 0 40px;
+            display: flex;
+            justify-content: space-between; 
+            align-items: center;
+            background: rgba(0, 0, 0, 0.85); 
+            backdrop-filter: blur(8px);
+            z-index: 7000; 
+            box-sizing: border-box;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+            transition: top 0.5s ease;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Luckiest Guy', cursive;
+            font-size: 1.5rem;
+            color: #FFD700;
+            cursor: pointer;
+            z-index: 2;
+        }
+        .nav-brand:hover { animation: shake 0.5s; }
+        @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } 100% { transform: rotate(0deg); } }
+        .nav-brand img { height: 40px; width: auto; }
+
+        /* CENTERED LINKS */
+        .nav-links {
+            position: absolute; 
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            list-style: none;
+            gap: 40px;
+            margin: 0;
+            padding: 0;
+            align-items: center;
+        }
+
+        .nav-links li { position: relative; }
+
+        .nav-links li a {
+            text-decoration: none; color: #ffffff; font-size: 1rem; font-weight: 500; transition: color 0.3s;
+            display: block; padding: 10px 0; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .nav-links li a:hover { color: #FFD700; text-shadow: 0 0 10px #FFD700; }
+        .arrow { font-size: 0.7rem; margin-left: 5px; color: #FFD700; }
+
+        /* Dropdown */
+        .dropdown-menu {
+            display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.95); list-style: none; padding: 10px 0; border-radius: 8px;
+            min-width: 200px; border: 1px solid rgba(255, 215, 0, 0.3); box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); z-index: 8000;
+        }
+        .nav-links li:hover .dropdown-menu { display: block; animation: fadeInUp 0.3s ease; }
+        .dropdown-menu li a { padding: 12px 20px; text-align: center; white-space: nowrap; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+        /* --- BUTTONS --- */
+        .nav-right-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 2;
+        }
+
+        /* UPDATED Main Chat Button (Now Gold/Yellow) */
+        .nav-cta {
+            padding: 10px 25px;
+            /* Changed to Gold/Yellow Gradient */
+            background: linear-gradient(145deg, #FFDD00, #FFBB00);
+            border: none; border-radius: 8px; 
+            /* Changed text color to Dark Brown for contrast */
+            color: #554000; 
+            font-weight: bold; cursor: pointer;
+            font-size: 1rem; transition: all 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            font-family: 'Luckiest Guy', cursive; /* Added font to match other buttons */
+        }
+        .nav-cta:hover { 
+            transform: scale(1.05); 
+            background: linear-gradient(145deg, #FFBB00, #FFDD00); 
+            box-shadow: 0 0 15px #FFD700; /* Added Glow */
+        }
+
+        /* Chat Controls (Home/Restart) */
+        .chat-nav-btn {
+            padding: 8px 20px;
+            background: linear-gradient(145deg, #FFDD00, #FFBB00);
+            border: none; border-radius: 8px; color: #554000; font-weight: bold; cursor: pointer;
+            font-size: 0.9rem; transition: all 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            font-family: 'Luckiest Guy', cursive;
+        }
+        .chat-nav-btn:hover { transform: scale(1.05); background: linear-gradient(145deg, #FFBB00, #FFDD00); box-shadow: 0 0 15px #FFD700; }
+
+        /* --- SECTIONS --- */
+        #main-website-content { position: relative; width: 100%; z-index: 2; }
+        section { padding: 80px 20px; width: 100%; box-sizing: border-box; position: relative; }
+        .section-title { font-family: 'Luckiest Guy', cursive; font-size: 4rem; color: #FFD700; text-align: center; margin-bottom: 60px; text-shadow: 0 5px 15px rgba(0,0,0,0.8); }
+        
+        #hero { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0 20px; }
+        #content-box { background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); border-radius: 20px; padding: 50px 40px; text-align: center; width: 100%; max-width: 850px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border: 1px solid rgba(255, 255, 255, 0.1); position: relative; z-index: 20; margin-top: 60px; }
+        #content-box h1 { font-family: 'Luckiest Guy', cursive; font-size: 3.5rem; color: #FFD700; text-shadow: 3px 3px 0px #000; margin-bottom: 20px; line-height: 1.2; min-height: 4.2rem; }
+        #hero-title { display: inline; }
+        .cursor { display: inline-block; width: 10px; height: 0.8em; background-color: #FFD700; animation: blink 1s infinite; margin-left: 5px; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        #content-box p { font-size: 1.4rem; color: #E0E0E0; margin-bottom: 40px; line-height: 1.6; }
+        
+        #orangutan-mascot { position: absolute; bottom: -80px; right: 20px; width: 450px; height: auto; z-index: 25; transform: rotate(5deg); animation: orangutan-peek 8s ease-in-out infinite alternate; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5)); }
+        
+        .explore-button { font-family: 'Luckiest Guy', cursive; font-size: 1.8rem; font-weight: bold; padding: 18px 50px; border: none; border-radius: 50px; background: linear-gradient(145deg, #FFDD00, #FFBB00); color: #554000; cursor: pointer; transition: all 0.3s ease-in-out; box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); position: relative; z-index: 30; }
+        
+        #features { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); }
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 40px; max-width: 1100px; margin: 0 auto; }
+        .feature-card { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); padding: 40px 30px; border-radius: 20px; text-align: center; color: white; transition: transform 0.3s, background 0.3s; transform-origin: top center; }
+        .feature-icon { font-size: 4rem; margin-bottom: 20px; display: block; text-shadow: 0 5px 10px rgba(0,0,0,0.3); }
+        .feature-card h3 { font-family: 'Luckiest Guy', cursive; font-size: 1.8rem; color: #FFD700; margin-bottom: 15px; }
+        
+        #about { background: linear-gradient(to bottom, rgba(0,0,0,0.7), #000); color: white; text-align: center; padding-top: 100px; padding-bottom: 0; }
+        .about-container { display: flex; flex-direction: column; align-items: center; justify-content: center; max-width: 800px; margin: 0 auto; z-index: 2; position: relative; }
+        .about-text p { font-size: 1.5rem; color: #ccc; margin-bottom: 30px; line-height: 1.8; }
+        .peeking-pongo { width: 350px; max-width: 80%; height: auto; display: block; margin: 40px auto 0 auto; transition: transform 0.4s, filter 0.3s; cursor: pointer; position: relative; z-index: 5; }
+        .peeking-pongo:hover { transform: translateY(-50px) scale(1.1); filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.6)); }
+
+        /* --- GLOBAL EFFECTS --- */
+        .leaf { 
+            position: fixed; top: -10%; z-index: 1; pointer-events: none; 
+            animation: leaf-fall linear forwards; 
+            opacity: 0.6; 
+        }
+        @keyframes leaf-fall { 
+            0% { transform: translateY(0) rotate(0deg) translateX(0); opacity: 0; } 
+            20% { opacity: 0.8; } 
+            100% { transform: translateY(110vh) rotate(360deg) translateX(50px); opacity: 0; } 
+        }
+
+        .falling-banana { position: fixed; top: -50px; font-size: 3rem; z-index: 9999; pointer-events: none; animation: fall linear forwards; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5)); }
+        @keyframes fall { 0% { transform: translateY(0) rotate(0deg); } 100% { transform: translateY(110vh) rotate(720deg); } }
+        
+        .firefly { position: fixed; width: 8px; height: 8px; background: #FFD700; border-radius: 50%; pointer-events: none; box-shadow: 0 0 15px #FFD700, 0 0 30px #FF6600; z-index: 9998; animation: fadeOut 1.5s linear forwards; }
+        @keyframes fadeOut { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(3); opacity: 0; top: -20px; } }
+        
+        .sound-toggle { position: fixed; bottom: 30px; right: 30px; background: rgba(0, 0, 0, 0.6); color: white; border: 2px solid #FFD700; border-radius: 50%; width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 1.8rem; z-index: 5000; box-shadow: 0 0 20px rgba(255,215,0,0.2); }
+
+        /* --- CHATBOT CONTAINER --- */
+        #chatbot-container {
+            display: none; 
+            top: 80px; 
+            height: calc(100vh - 80px); 
+            width: 100%;
+            background: #000;
+            position: fixed; left: 0; z-index: 6000; 
+        }
+        .loader { border: 6px solid #333; border-top: 6px solid #FFD700; border-radius: 50%; width: 60px; height: 60px; animation: spin 0.8s linear infinite; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        @keyframes spin { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+        @keyframes orangutan-peek { 0% { bottom: -80px; right: 50px; transform: rotate(5deg); } 50% { bottom: -40px; right: 30px; transform: rotate(0deg); } 100% { bottom: -80px; right: 50px; transform: rotate(5deg); } }
+
+        /* MOBILE */
+        @media (max-width: 768px) {
+            .navbar { padding: 15px 20px; }
+            #nav-main-content .nav-links { display: none; }
+            .nav-brand span { display: none; } 
+            #content-box { padding: 30px 20px; } #content-box h1 { font-size: 2.5rem; } .section-title { font-size: 2.5rem; }
+            #orangutan-mascot { width: 250px; bottom: -40px; right: -30px; } .peeking-pongo { width: 250px; }
+            @keyframes orangutan-peek { 0% { bottom: -60px; right: -40px; transform: rotate(5deg); } 50% { bottom: -20px; right: -20px; transform: rotate(0deg); } 100% { bottom: -60px; right: -40px; transform: rotate(5deg); } }
+            .vine-decoration { width: 100px; height: 200px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="day-night-overlay"></div>
+
+    <svg class="vine-decoration vine-left" width="200" height="400" viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20,0 Q50,100 20,200 T50,400" stroke="#2e8b57" stroke-width="5" fill="none"/>
+        <circle cx="20" cy="50" r="5" fill="#228b22"/> <circle cx="40" cy="150" r="5" fill="#228b22"/>
+        <path d="M20,50 Q30,40 40,50 Q30,60 20,50" fill="#228b22"/> <path d="M40,150 Q50,140 60,150 Q50,160 40,150" fill="#228b22"/>
+    </svg>
+    <svg class="vine-decoration vine-right" width="200" height="400" viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20,0 Q50,100 20,200 T50,400" stroke="#2e8b57" stroke-width="5" fill="none"/>
+        <circle cx="20" cy="80" r="5" fill="#228b22"/>
+        <path d="M20,80 Q30,70 40,80 Q30,90 20,80" fill="#228b22"/>
+    </svg>
+
+    <nav class="navbar" id="main-nav">
+        <div class="nav-brand" onclick="goHome()">
+            <img src="images/orangutan-hat.png" alt="Logo">
+            <span>PongoBot.ai</span>
+        </div>
+
+        <div id="nav-main-content" class="nav-group">
+            <ul class="nav-links">
+                <li><a href="#hero">Home</a></li>
+                <li>
+                    <a href="#features">Features <span class="arrow">▼</span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#" onclick="showChatbot()">Chat with Pongo</a></li>
+                        <li><a href="https://bryanwzh.github.io/PongoBotFruitCatcher/">Fruit Catcher</a></li>
+                        <li><a href="https://my.spline.design/immersivejungle-pD71NaxvruCKIVbC8k2lJmtR/">3D Jungle</a></li>
+                    </ul>
+                </li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#research">Research</a></li>
+            </ul>
+        </div>
+
+        <div class="nav-right-container">
+            <button class="nav-cta" id="main-chat-btn" onclick="showChatbot()">Chat now!</button>
+            
+            <div id="chat-controls" style="display: none; gap: 10px;">
+                <button class="chat-nav-btn" onclick="goHome()">Home</button>
+                <button class="chat-nav-btn" onclick="restartChatbot()">Restart</button>
+            </div>
+        </div>
+    </nav>
+
+    <div id="main-website-content">
+        <section id="hero">
+            <img id="orangutan-mascot" src="images/orangutan-hat.png" alt="Playful Orangutan">
+            <div id="content-box">
+                <h1><span id="hero-title">Your Jungle Adventure Awaits!</span><span class="cursor"></span></h1>
+                <p>PongoBot, your orangutan companion, is ready to guide you.<br>Scroll down to explore or start now!</p>
+                <button class="explore-button" onclick="showChatbot()">Chat with PongoBot!</button>
+            </div>
+        </section>
+        <section id="features">
+            <h2 class="section-title">Why Pick Pongo?</h2>
+            <div class="features-grid">
+                <div class="feature-card"><span class="feature-icon">🍌</span><h3>Banana Logic</h3><p>Powered by high-fiber AI, PongoBot solves problems faster than peeling a ripe fruit.</p></div>
+                <div class="feature-card"><span class="feature-icon">🌴</span><h3>Jungle Knowledge</h3><p>From the canopy to the forest floor, ask anything about the wild world.</p></div>
+                <div class="feature-card"><span class="feature-icon">🛡</span><h3>Safe Safari</h3><p>Your data is protected like a hidden temple. Explore with total peace of mind.</p></div>
+            </div>
+        </section>
+        <section id="about">
+            <div class="about-container"><h2 class="section-title">About Pongo</h2><div class="about-text"><p>OOH-OOH! 🦧 Greetings from the canopy! I’m Pongo, the original 'Man of the Forest' hanging out right here in the lush jungles of Malaysia (mostly over in Sabah and Sarawak). I might look like a big, relaxed ball of orange fluff who just loves snacking on wild figs, but I need you to listen to something important. My family is Critically Endangered. It’s getting harder to find sturdy trees to swing on because our rainforest homes are disappearing to make room for farms and plantations. We are the gardeners of this forest, but we need help to make sure the Malaysian jungle stays wild and free for us to keep swinging!</p></div></div>
+            <img src="images/image-removebg-preview.png" alt="Peeking Pongo" class="peeking-pongo" onclick="triggerBananaRain()">
+        </section>
+        <style>
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Special+Elite&display=swap');
+
+#research{
+  --paper:#E9DFC6;
+  --paper-edge:#D6C7A1;
+  --ink:#1F3A2E;
+  --ink-soft:#4E6157;
+  --stamp:#A8352B;
+  --rule:rgba(31,58,46,.22);
+  background:#000;
+  padding:90px 20px 110px;
+}
+#research .rs-head{ text-align:center; margin-bottom:14px; }
+#research .rs-kicker{
+  font-family:'Special Elite',monospace; color:#C9B57B;
+  letter-spacing:.34em; text-transform:uppercase; font-size:.8rem;
+  margin-bottom:46px;
+}
+
+#research .sheet{
+  position:relative; max-width:1040px; margin:0 auto;
+  background:var(--paper);
+  background-image:
+    linear-gradient(rgba(31,58,46,.05) 1px,transparent 1px);
+  background-size:100% 34px;
+  border:1px solid var(--paper-edge);
+  border-radius:3px;
+  box-shadow:0 30px 70px rgba(0,0,0,.7), 0 2px 0 rgba(255,255,255,.25) inset;
+  padding:64px 62px 56px;
+  color:var(--ink);
+  opacity:0; transform:translateY(26px);
+  transition:opacity .7s ease, transform .7s ease;
+}
+#research .sheet.is-in{ opacity:1; transform:none; }
+
+#research .sheet::before{
+  content:''; position:absolute; left:0; right:0; top:-9px; height:10px;
+  background:
+    radial-gradient(circle at 6px 10px, transparent 6px, var(--paper) 6.5px) 0 0/14px 10px repeat-x;
+}
+
+#research .stamp{
+  position:absolute; top:38px; right:46px;
+  transform:rotate(-9deg);
+  border:3px double var(--stamp); border-radius:4px;
+  padding:10px 16px 8px; text-align:center;
+  color:var(--stamp); opacity:.82;
+  font-family:'Special Elite',monospace; line-height:1.1;
+}
+#research .stamp b{ display:block; font-size:1.9rem; letter-spacing:.06em; }
+#research .stamp span{ display:block; font-size:.62rem; letter-spacing:.22em; margin-top:5px; }
+
+#research .eyebrow{
+  font-family:'Special Elite',monospace; font-size:.78rem;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--ink-soft);
+  margin:0 0 18px;
+}
+#research h3.title{
+  font-family:'Lora',Georgia,serif; font-weight:600;
+  font-size:2.35rem; line-height:1.22; margin:0 0 20px; max-width:82%;
+  color:var(--ink);
+}
+#research .byline{ font-family:'Lora',Georgia,serif; font-size:1.02rem; margin:0 0 5px; }
+#research .affil{ font-family:'Lora',Georgia,serif; font-style:italic;
+  color:var(--ink-soft); font-size:.97rem; margin:0; }
+
+#research hr.rule{ border:0; border-top:1px solid var(--rule); margin:34px 0 30px; }
+
+#research h4{
+  font-family:'Special Elite',monospace; font-size:.8rem;
+  letter-spacing:.24em; text-transform:uppercase;
+  color:var(--ink-soft); margin:0 0 14px;
+}
+#research p.body{
+  font-family:'Lora',Georgia,serif; font-size:1.06rem; line-height:1.85;
+  margin:0 0 16px; text-align:justify; hyphens:auto; color:var(--ink);
+}
+#research .abstract{ columns:2; column-gap:44px; }
+#research .abstract p.body{ margin-bottom:0; }
+
+#research .chips{ display:flex; flex-wrap:wrap; gap:9px; margin-top:6px; }
+#research .chip{
+  font-family:'Special Elite',monospace; font-size:.74rem; letter-spacing:.1em;
+  text-transform:uppercase; padding:6px 12px;
+  border:1px solid var(--rule); border-radius:2px; color:var(--ink-soft);
+}
+
+#research .finding{ display:flex; align-items:center; gap:30px; flex-wrap:wrap; }
+#research .score{
+  font-family:'Lora',Georgia,serif; font-weight:600; font-size:4.6rem;
+  line-height:.9; color:var(--stamp);
+}
+#research .score small{
+  display:block; font-family:'Special Elite',monospace; font-size:.68rem;
+  letter-spacing:.2em; color:var(--ink-soft); margin-top:10px;
+}
+#research .finding-note{ flex:1; min-width:280px; }
+
+#research dl.record{ margin:0; font-family:'Special Elite',monospace; font-size:.9rem; }
+#research dl.record div{
+  display:flex; gap:18px; padding:9px 0; border-bottom:1px dotted var(--rule);
+}
+#research dl.record dt{ color:var(--ink-soft); min-width:190px; letter-spacing:.08em; }
+#research dl.record dd{ margin:0; }
+#research dl.record a{ color:var(--ink); text-decoration:underline;
+  text-underline-offset:3px; word-break:break-word; }
+#research dl.record a:hover{ color:var(--stamp); }
+
+#research .footnote{
+  font-family:'Lora',Georgia,serif; font-size:.88rem; font-style:italic;
+  color:var(--ink-soft); line-height:1.7; margin:26px 0 0;
+}
+#research .cite{
+  font-family:'Special Elite',monospace; font-size:.82rem; line-height:1.75;
+  background:rgba(31,58,46,.06); border-left:3px solid var(--stamp);
+  padding:16px 18px; margin-top:14px; color:var(--ink);
+}
+
+@media(max-width:860px){
+  #research .sheet{ padding:52px 26px 44px; }
+  #research .abstract{ columns:1; }
+  #research h3.title{ font-size:1.7rem; max-width:100%; }
+  #research .stamp{ position:static; display:inline-block; margin-bottom:22px; transform:rotate(-4deg); }
+  #research dl.record div{ flex-direction:column; gap:4px; }
+}
+@media(prefers-reduced-motion:reduce){
+  #research .sheet{ opacity:1; transform:none; transition:none; }
+}
+</style>
+
+<section id="research">
+  <div class="rs-head">
+    <h2 class="section-title">The Research Behind Pongo</h2>
+    <div class="rs-kicker">Project documentation &middot; iCE-CInno 2026</div>
+  </div>
+
+  <article class="sheet">
+    <div class="stamp">
+      <b>UG003</b>
+      <span>Abstract approved</span>
+    </div>
+
+    <p class="eyebrow">International Competition &amp; Exhibition on Computing Innovation 2026
+      &middot; Category UG &mdash; IPT Undergraduate</p>
+
+    <h3 class="title">PongoBot: An AI-Powered Conservation Companion for Orangutan Education</h3>
+
+    <p class="byline">Vinothini Kasinathan &middot; Isaac Lew Zhi Hao &middot; Bryan Wan Zhing Hoi
+      &middot; Chai Zhe Hee &middot; Sarimah Samsudin</p>
+    <p class="affil">School of Computing, Asia Pacific University of Technology &amp; Innovation (APU), Malaysia</p>
+
+    <hr class="rule">
+
+    <h4>Abstract</h4>
+    <div class="abstract">
+      <p class="body">Public awareness of orangutan conservation in Malaysia remains limited,
+      particularly among younger generations who often lack access to engaging and interactive
+      environmental learning resources. To address this issue, this project introduces PongoBot,
+      an AI-powered educational chatbot designed to promote knowledge and awareness of orangutans
+      and their conservation through conversational learning. PongoBot supports both English and
+      Bahasa Malaysia and integrates interactive features such as quizzes, multimedia content,
+      gamified activities, and personalised responses to enhance user engagement. Users can explore
+      conservation topics through natural conversations while receiving immediate and accurate
+      feedback. The project aims to provide an accessible and scalable digital learning tool that
+      encourages environmental awareness and supports the United Nations Sustainable Development
+      Goals, particularly SDG 4 (Quality Education), SDG 13 (Climate Action), and SDG 15 (Life on
+      Land). User evaluation was conducted using the Chatbot Usability Questionnaire (CUQ),
+      involving 30 participants. The results indicated excellent usability, with a mean CUQ score
+      of 95.6, demonstrating high levels of user satisfaction, engagement, and ease of use. The
+      findings suggest that AI-driven chatbots can serve as effective tools for environmental
+      education and conservation outreach. PongoBot demonstrates how artificial intelligence can be
+      leveraged to create meaningful learning experiences while promoting biodiversity conservation
+      and sustainable development.</p>
+    </div>
+
+    <div class="chips" style="margin-top:22px">
+      <span class="chip">Artificial Intelligence</span>
+      <span class="chip">Conversational AI</span>
+      <span class="chip">Wildlife Conservation</span>
+      <span class="chip">Environmental Education</span>
+      <span class="chip">Sustainable Development Goals</span>
+    </div>
+
+    <hr class="rule">
+
+    <h4>Evaluation</h4>
+    <div class="finding">
+      <div class="score">95.6<small>Mean CUQ score</small></div>
+      <div class="finding-note">
+        <p class="body" style="text-align:left">Usability was measured with the Chatbot Usability
+        Questionnaire, a validated instrument for conversational interfaces, across 30 participants.
+        The result falls in the <strong>excellent</strong> band, indicating high satisfaction,
+        engagement and ease of use.</p>
+        <div class="chips">
+          <span class="chip">SDG 4</span><span class="chip">SDG 13</span><span class="chip">SDG 15</span>
+          <span class="chip">n = 30</span>
+        </div>
+      </div>
+    </div>
+
+    <hr class="rule">
+
+    <h4>Project record</h4>
+    <dl class="record">
+      <div><dt>Project ID</dt><dd>UG003</dd></div>
+      <div><dt>Category</dt><dd>UG &mdash; IPT (Undergraduate)</dd></div>
+      <div><dt>Institution</dt><dd>Asia Pacific University of Technology &amp; Innovation</dd></div>
+      <div><dt>Live system</dt>
+        <dd><a href="https://bryanwzh.github.io/PongoBot/">bryanwzh.github.io/PongoBot</a></dd></div>
+      <div><dt>Fruit Catcher module</dt>
+        <dd><a href="https://bryanwzh.github.io/PongoBotFruitCatcher/">bryanwzh.github.io/PongoBotFruitCatcher</a></dd></div>
+      <div><dt>3D jungle module</dt>
+        <dd><a href="https://my.spline.design/immersivejungle-pD71NaxvruCKIVbC8k2lJmtR/">Spline immersive environment</a></dd></div>
+      <div><dt>Source code</dt>
+        <dd><a href="https://github.com/BryanWZH/PongoBot">github.com/BryanWZH/PongoBot</a></dd></div>
+      <div><dt>Demonstration video</dt>
+        <dd><a href="#">Add YouTube link here</a></dd></div>
+    </dl>
+
+  </article>
+</section>
+
+<script>
+(function(){
+  var s=document.querySelector('#research .sheet');
+  if(!s) return;
+  if(!('IntersectionObserver' in window)){ s.classList.add('is-in'); return; }
+  var io=new IntersectionObserver(function(e){
+    if(e[0].isIntersecting){ s.classList.add('is-in'); io.disconnect(); }
+  },{threshold:.12});
+  io.observe(s);
+})();
+</script>
+    </div> 
+    
+    <button class="sound-toggle" onclick="toggleJungleSound()"><span id="sound-icon">🔊</span></button>
+    <audio id="jungle-sound" loop preload="auto"><source src="audio/jungle-soundscape.mp3" type="audio/mpeg"></audio>
+
+    <div id="chatbot-container"><div class="loader"></div></div>
+
+    <script>
+        /* --- JAVASCRIPT REMAINS UNCHANGED BUT INCLUDED FOR COMPLETENESS --- */
+        document.addEventListener("DOMContentLoaded", function() {
+            const textToType = "Your Jungle Adventure Awaits!";
+            const titleElement = document.getElementById('hero-title');
+            if(titleElement) {
+                titleElement.innerText = ""; let charIndex = 0;
+                function typeWriter() { if (charIndex < textToType.length) { titleElement.innerHTML += textToType.charAt(charIndex); charIndex++; setTimeout(typeWriter, 100); } }
+                setTimeout(typeWriter, 500);
+            }
+        });
+
+        function createLeaf() {
+            const leaf = document.createElement('div'); leaf.classList.add('leaf'); leaf.innerHTML = (Math.random() > 0.5) ? '🍃' : '🍂'; 
+            leaf.style.left = Math.random() * 100 + 'vw'; leaf.style.fontSize = (Math.random() * 20 + 20) + 'px';
+            const duration = Math.random() * 5 + 8;
+            leaf.style.animationDuration = duration + 's';
+            document.body.appendChild(leaf);
+            setTimeout(() => { leaf.remove(); }, duration * 1000);
+        }
+        setInterval(createLeaf, 800); 
+
+        document.addEventListener('mousemove', function(e) {
+            if (Math.random() > 0.2) return; 
+            const firefly = document.createElement('div'); firefly.classList.add('firefly');
+            firefly.style.left = e.clientX + 'px'; firefly.style.top = e.clientY + 'px';
+            const rx = (Math.random()-0.5)*20; const ry = (Math.random()-0.5)*20;
+            firefly.style.transform = `translate(${rx}px, ${ry}px)`; document.body.appendChild(firefly);
+            setTimeout(() => { firefly.remove(); }, 1500);
+        });
+
+        function triggerBananaRain() { for (let i = 0; i < 40; i++) { setTimeout(createBanana, i * 80); } showChatbot(); }
+        function createBanana() {
+            const banana = document.createElement('div'); banana.innerText = '🍌'; banana.classList.add('falling-banana');
+            banana.style.left = Math.random() * 100 + 'vw'; banana.style.animationDuration = (Math.random() * 1.5 + 1.5) + 's';
+            banana.style.fontSize = (Math.random() * 2 + 1.5) + 'rem'; document.body.appendChild(banana);
+            setTimeout(() => { banana.remove(); }, 4000);
+        }
+
+        function loadFreshChat() {
+            const container = document.getElementById('chatbot-container');
+            container.innerHTML = '';
+            const loader = document.createElement('div'); loader.className = 'loader'; container.appendChild(loader);
+            const oldScript = document.getElementById('typebot-init-script');
+            if (oldScript) oldScript.remove();
+            const typebotElement = document.createElement('typebot-standard');
+            typebotElement.style.height = '100%'; 
+            container.appendChild(typebotElement);
+            const typebotInitScript = document.createElement("script");
+            typebotInitScript.id = "typebot-init-script"; typebotInitScript.type = "module";
+            typebotInitScript.innerHTML = `import Typebot from 'https://cdn.jsdelivr.net/npm/@typebot.io/js/dist/web.js'; Typebot.initStandard({ typebot: "pongo-bot-fb51et7" });`;
+            document.body.append(typebotInitScript);
+        }
+
+        function showChatbot() {
+            const websiteContent = document.getElementById('main-website-content');
+            const chatContainer = document.getElementById('chatbot-container');
+            document.getElementById('nav-main-content').style.display = 'none';
+            document.getElementById('main-chat-btn').style.display = 'none';
+            document.getElementById('chat-controls').style.display = 'flex';
+            websiteContent.style.transition = 'opacity 0.5s';
+            websiteContent.style.opacity = '0';
+            setTimeout(() => {
+                websiteContent.style.display = 'none';
+                chatContainer.style.display = 'block';
+                document.body.style.overflow = 'hidden'; 
+                loadFreshChat();
+            }, 500);
+        }
+
+        function restartChatbot() {
+            Object.keys(sessionStorage).forEach(key => { if (key.startsWith('typebot-')) sessionStorage.removeItem(key); });
+            Object.keys(localStorage).forEach(key => { if (key.startsWith('typebot-')) localStorage.removeItem(key); });
+            loadFreshChat();
+        }
+
+        function goHome() {
+            document.getElementById('chatbot-container').style.display = 'none';
+            document.getElementById('nav-main-content').style.display = 'block';
+            document.getElementById('main-chat-btn').style.display = 'block';
+            document.getElementById('chat-controls').style.display = 'none';
+            const websiteContent = document.getElementById('main-website-content');
+            websiteContent.style.display = 'block';
+            document.body.style.overflowX = 'hidden';
+            document.body.style.overflowY = 'auto';
+            setTimeout(() => { websiteContent.style.opacity = '1'; }, 10); 
+        }
+
+        function toggleJungleSound() {
+            const jungleSound = document.getElementById('jungle-sound');
+            const soundIcon = document.getElementById('sound-icon');
+            jungleSound.volume = 0.4;
+            if (jungleSound.paused) { jungleSound.play(); soundIcon.textContent = '🔊'; } 
+            else { jungleSound.pause(); soundIcon.textContent = '🔇'; }
+        }
+    </script>
+
+</body>
+</html>
